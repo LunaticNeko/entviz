@@ -1,3 +1,4 @@
+domain,dpid,notes
 NAIST,0x678c089e01e99495,Pica8
 NAIST,0x1018c1900e,vSwitch on sd-lemon
 NAIST,0x5008069821,vSwitch on sd-grape01

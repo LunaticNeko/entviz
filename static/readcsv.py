@@ -2,6 +2,7 @@ import csv
 switch_to_site = {}
 with open('../data/switches.csv', 'rb') as csvfile:
     reader = csv.reader(csvfile, delimiter=',')
+    next(reader, None)
     for row in reader:
         switch_to_site[int(row[1],16)] = row[0]
 

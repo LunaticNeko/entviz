@@ -1,0 +1,40 @@
+svg .node, .node-hover{
+    stroke: black;
+    stroke-width: 1px;
+}
+svg .node{
+    fill: white;
+}
+
+svg .link{
+    stroke-width: 2px;
+    stroke: black;
+}
+
+svg .GRE{
+    stroke: red;
+}
+
+svg .LAN{
+    stroke: blue;
+}
+
+svg .node-hover{
+    fill: teal;
+}
+
+svg #maincanvas{
+    display:block;
+}
+
+.axis path,
+.axis line{
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text{
+    font-family: sans-serif;
+    font-size: 11px;
+}
