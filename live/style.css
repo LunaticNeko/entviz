@@ -2,12 +2,17 @@ svg .node, .node-hover{
     stroke: black;
     stroke-width: 1px;
 }
+
+svg .node .switch{
+    r: 30px;
+}
+
 svg .node{
     fill: white;
 }
 
 svg .link{
-    stroke-width: 2px;
+    stroke-width: 3px;
     stroke: black;
 }
 
@@ -19,9 +24,20 @@ svg .LAN{
     stroke: blue;
 }
 
-svg .node-hover{
-    fill: teal;
+/* These two elements should be hidden */
+svg .meta{
+    /*r: 5px*/
+    r: 0px;
 }
+
+svg .hidden{
+    fill-opacity: 0;
+    stroke-opacity: 0; /**/
+    stroke-width: 0px;
+    stroke-color: gray;
+    stroke-dasharray: "80,80";
+}
+/* Finish Hiding */
 
 svg #maincanvas{
     display:block;

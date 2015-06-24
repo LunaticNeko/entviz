@@ -1,30 +1,26 @@
-svgW = 800
-svgH = 600
+svgW = 900
+svgH = 700
 
-dataset = [[5, 20], [480, 90], [250, 50], [100, 33], [330, 95],
-           [410, 12], [475, 44], [25, 67], [85, 21], [220, 88]
-          ]
+d3_default_link_distance = 80
+core_distance = 5
+internal_distance = 10
+external_distance = 160
+core_strength = 0.9
+internal_strength = 0.6
+external_strength = 0.1
 
-data_switches = 0
-data_links = 0
+nodesizes =
+    'meta': 5,
+    'switch': 10
 
-domain_colorscale = d3.scale.category20()
+switch_charge = -1600
+meta_charge = -1000
 
-d3.csv("../data/switches.csv", (d) -> switchdata_wrapper(d))
-
-xscale = d3.scale.linear()
-    .domain([0,d3.max(dataset, (d)->d[0])])
-    .range([30,svgW-30])
-
-yscale = d3.scale.linear()
-    .domain([0,d3.max(dataset, (d)->d[1])])
-    .range([svgH-30,30])
-
-xaxis = d3.svg.axis().scale(xscale).orient("bottom").ticks(10)
-yaxis = d3.svg.axis().scale(yscale).orient("left")
 
 switchdata_wrapper = (switchdata) ->
-    d3.csv("../data/links.csv", (linkdata) -> linkdata_wrapper(switchdata, linkdata))
+    d3.csv("../data/links.csv", (linkdata) ->
+        linkdata_wrapper(switchdata, linkdata))
+d3.csv("../data/switches.csv", (d) -> switchdata_wrapper(d))
 
 svg = d3.select("body")
     .append("svg")
@@ -32,58 +28,76 @@ svg = d3.select("body")
     .attr("height", svgH)
 
 linkdata_wrapper = (switchdata, linkdata) ->
-    force = d3.layout.force().size([svgW, svgH]).linkDistance(80).charge(-2000).linkStrength(0.8)
-        .friction(0.8)
-
     # create index hashes (for quicker find)
     dpid_to_index = {}
     domains = []
+    ns = switchdata.length
+    nl = linkdata.length
     for s in switchdata
         if domains.indexOf(s['domain']) == -1
             domains.push(s['domain'])
-    console.log(domains)
-    domain_to_groups = {}
-    for domain, i in domains
-        console.log(domain,i)
-        domain_to_groups[domain] = i
-
+    nd = domains.length
     forceNodes = []
+
+    console.log(switchdata)
+
     for s, si in switchdata
         dpid_to_index[s.dpid] = si
-        forceNodes[si] =
-            name: "#{s['domain']} #{s['dpid']}"
-            group: domain_to_groups[s['domain']]
+        forceNodes.push(
+            dpid: s['dpid'],
+            name: "#{s['domain']} #{s['dpid']}",
+            group: domains.indexOf(s['domain']),
+            type: 'switch',
+            charge: switch_charge
+        )
 
-    # find index of source and destination
+    # add metanodes to improve clustering
+    for d, di in domains
+        forceNodes.push(
+            dpid: "#{d}",
+            name: "#{d}",
+            group: domains.indexOf(d),
+            type: 'meta',
+            charge: meta_charge
+        )
+    console.log('nodes', forceNodes)
+
     forceLinks = []
     for l, li in linkdata
         src = dpid_to_index[l['f-dpid']]
         tar = dpid_to_index[l['t-dpid']]
-        forceLinks[li] =
+        console.log(forceNodes[src], forceNodes[tar])
+        samegroup = forceNodes[src].group == forceNodes[tar].group
+        forceLinks.push(
             source: src,
             target: tar,
-            type: l['notes']
-    console.log(domain_to_groups)
-    console.log(forceNodes)
-    console.log(forceLinks)
+            type: l['notes'],
+            length: if samegroup then internal_distance else external_distance,
+            strength: if samegroup then internal_strength else external_strength
+        )
 
-    force.links(forceLinks)
-    linkSelection = svg.selectAll("line").data(forceLinks)
-    linkSelection.enter()
-        .insert("line")
-        .attr("class", (d) -> "link #{d.type}")
+    # link all nonmeta switches to group heads
+    for n, ni in forceNodes[0...ns]
+        forceLinks.push(
+            source: ni,
+            target: n.group+ns,
+            type: 'hidden',
+            length: core_distance,
+            strength: core_strength
+        )
 
-    force.nodes(forceNodes)
-    nodeSelection = svg.selectAll("circle.node").data(forceNodes)
-    nodeSelection.enter()
-        .append("circle")
-        .attr("r", 10)
-        .classed("node", true)
-        .style("fill", (d) -> domain_colorscale(d.group))
-        .call(force.drag)
-        .append("title")
-        .text((d) -> d.name)
+    domain_colorscale = d3.scale.category20()
 
+
+
+    # start defining force layout stuff
+    force = d3.layout.force().size([svgW, svgH])
+        .linkDistance((d) -> console.log(d.source.dpid, d.target.dpid, d.source.weight, d.target.weight); d.length)
+        #.charge((d) -> d.charge)
+        .charge((d) -> d.weight * -500)
+        .linkStrength(0.7)
+        .friction(0.5)
+        .gravity(0.1)
     force.on("tick", (e) ->
         linkSelection.attr("x1", (d) -> d.source.x)
             .attr("y1", (d) -> d.source.y)
@@ -92,6 +106,55 @@ linkdata_wrapper = (switchdata, linkdata) ->
         nodeSelection.attr("cx", (d) -> d.x)
             .attr("cy", (d) -> d.y)
     )
+
+
+    force.nodes(forceNodes).links(forceLinks)
+    linkSelection = svg.selectAll("line").data(forceLinks)
+    linkSelection.enter()
+        .insert("line")
+        .attr("class", (d) -> "link #{d.type}")
+
+    nodeSelection = svg.selectAll("circle.node").data(forceNodes)
+    nodeSelection.enter()
+        .append("circle")
+        .attr("r", (d) -> nodesizes[d.type])
+        .attr("class", (d) -> "node #{d.type}")
+        .style("fill", (d) -> domain_colorscale(d.group))
+        .call(force.drag)
+        .append("title")
+        .text((d) -> d.name)
+
+
+    console.log(forceNodes)
+    console.log(forceLinks)
+
+    # write up table
+    swt = d3.select("body").append("table")
+    swth = swt.append("thead")
+    swtb = swt.append("tbody")
+    swtcols = ['dpid', 'group', 'name', 'type']
+    swth.append("tr").selectAll("th").data(swtcols).enter().append("th").text((d)->d)
+    swtr = swtb.selectAll("tr").data(forceNodes).enter().append("tr")
+    swtc = swtr.selectAll("td")
+        .data((r) ->
+            swtcols.map((col)->{col: col, value: r[col]}))
+        .enter()
+        .append("td")
+        .text((d) -> d.value)
+
+    lit = d3.select("body").append("table")
+    lith = lit.append("thead")
+    litb = lit.append("tbody")
+    litcols = ['length', 'source', 'target', 'type']
+    lith.append("tr").selectAll("th").data(litcols).enter().append("th").text((d)->d)
+    litr = litb.selectAll("tr").data(forceLinks).enter().append("tr")
+    litc = litr.selectAll("td")
+        .data((r) ->
+            litcols.map((col)->{col: col, value: r[col]}))
+        .enter()
+        .append("td")
+        .text((d) -> d.value)
+
 
 
     force.start()
