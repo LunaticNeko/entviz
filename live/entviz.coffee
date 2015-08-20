@@ -2,19 +2,19 @@ svgW = 900
 svgH = 700
 
 d3_default_link_distance = 80
-core_distance = 5
-internal_distance = 10
-external_distance = 160
-core_strength = 0.9
-internal_strength = 0.6
-external_strength = 0.1
+core_distance = 1
+internal_distance = 2
+external_distance = 50
+core_strength = 1
+internal_strength = 0.9
+external_strength = 0.3
 
 nodesizes =
     'meta': 5,
     'switch': 10
 
-switch_charge = -1600
-meta_charge = -1000
+switch_charge = -2300
+meta_charge = -1800
 
 
 switchdata_wrapper = (switchdata) ->
@@ -98,6 +98,7 @@ linkdata_wrapper = (switchdata, linkdata) ->
         .linkStrength(0.7)
         .friction(0.5)
         .gravity(0.1)
+
     force.on("tick", (e) ->
         linkSelection.attr("x1", (d) -> d.source.x)
             .attr("y1", (d) -> d.source.y)

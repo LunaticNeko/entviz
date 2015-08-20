@@ -26,7 +26,7 @@ print 'digraph {'
 for site in local_links:
     print '    subgraph %s {' % (site)
     for link in local_links[site]:
-        print '        %s-%s -> %s-%s;' % (link[0], link[1], link[3], link[4])
+        print '        "%s-%s" -> "%s-%s";' % (link[0], link[1], link[3], link[4])
     print '    }'
-#print ';'.join(nonlocal_links)
+print ';\n'.join(['"%s-%s" -> "%s-%s"' % (l[0], l[1], l[3], l[4]) for l in nonlocal_links[1:]])
 print '}'

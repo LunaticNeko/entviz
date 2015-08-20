@@ -7,26 +7,26 @@ svgH = 700;
 
 d3_default_link_distance = 80;
 
-core_distance = 5;
+core_distance = 1;
 
-internal_distance = 10;
+internal_distance = 2;
 
-external_distance = 160;
+external_distance = 50;
 
-core_strength = 0.9;
+core_strength = 1;
 
-internal_strength = 0.6;
+internal_strength = 0.9;
 
-external_strength = 0.1;
+external_strength = 0.3;
 
 nodesizes = {
   'meta': 5,
   'switch': 10
 };
 
-switch_charge = -1600;
+switch_charge = -2300;
 
-meta_charge = -1000;
+meta_charge = -1800;
 
 switchdata_wrapper = function(switchdata) {
   return d3.csv("../data/links.csv", function(linkdata) {
